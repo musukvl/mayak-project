@@ -1,0 +1,106 @@
+﻿@using System.Globalization
+@using Mayak.Model
+@using System.Linq
+@section head
+{
+    <meta http-equiv="refresh" content="5">
+}
+
+
+
+
+<div>
+    <h1> Locations</h1>
+
+</div>
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
+
+<div id="map" style="width: 100%; height: 50vh;"></div>
+
+@section scripts {
+<script>
+    var records = [
+        @foreach (Location location in ViewBag.Locations)
+        {
+            <text>{ "lat" : @location.Lat.ToString(CultureInfo.InvariantCulture), "lon": @location.Lon.ToString(CultureInfo.InvariantCulture), "date": @location.Date },</text>
+        }
+    ];
+
+
+    var self = {};
+
+    var mapOptions = { zoom: 10, center : new google.maps.LatLng(records[0].lat, records[0].lon) };
+    self.map = new google.maps.Map($("#map")[0] , mapOptions);
+    var latLngBounds = new google.maps.LatLngBounds();
+    var polylineCoordinates = [];
+
+
+    self.redImage = new google.maps.MarkerImage('/Content/img/measle_red.png',
+           new google.maps.Size(7, 7),
+           new google.maps.Point(0, 0),
+           new google.maps.Point(3.5, 3.5));
+
+    self.infoWindow = new google.maps.InfoWindow({content: "loading..."});
+
+
+    records.forEach(function(record){
+        var position = new google.maps.LatLng(record.lat, record.lon);
+        latLngBounds.extend(position);
+        polylineCoordinates.push(position);
+
+        record.marker = new google.maps.Marker({
+            position: position,
+            map: self.map,
+            icon: self.redImage 
+        });
+        if (record === records[0]) {
+            record.marker.setIcon('/Content/img/marker-green.png');
+        }
+        initMarker(record);
+    });
+
+
+    self.map.fitBounds(latLngBounds);
+
+    var tripPath = new google.maps.Polyline({
+        path: polylineCoordinates,
+        geodesic: true,
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 1
+    });
+
+    function initMarker(record) {
+        google.maps.event.addListener(record.marker, 'click', function() {
+          
+            //openInfoWindow(record);
+      
+        });
+    }
+
+    tripPath.setMap(self.map);
+
+</script>
+}
+
+
+<table class="table">
+    @{
+        var list = (List<Location>)ViewBag.Locations;
+    }
+    @foreach (Location location in list.Take(10))
+    {
+        <tr>
+            <td>
+                @location.Date
+            </td>
+            <td>
+                @location.Lat
+            </td>
+            <td>
+                @location.Lon
+            </td>
+        </tr>
+
+    }
+</table>
